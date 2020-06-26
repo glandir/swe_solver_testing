@@ -1,0 +1,6 @@
+[submodule "extern/googletest"]
+	path = extern/googletest
+	url = https://github.com/google/googletest
+[submodule "extern/ExaHyPE-engine"]
+	path = extern/ExaHyPE-engine
+	url = https://github.com/glandir/ExaHyPE-engine
