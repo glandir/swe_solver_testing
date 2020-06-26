@@ -12,6 +12,8 @@ target_sources(swe_solvers
 target_include_directories(swe_solvers
 	PUBLIC
 		${CMAKE_CURRENT_SOURCE_DIR}
+	PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}
 	)
 target_compile_features(swe_solvers PUBLIC cxx_std_17)
 
