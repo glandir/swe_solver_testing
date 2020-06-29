@@ -119,13 +119,14 @@ struct RiemannSolversF: ::testing::Test
 
 	std::vector<TestInput> moreInputs;
 	static constexpr TestInput inputs[] = {
-		{{{0, 0, 0, 0}, {1, 0, 0, 0}}},
+		{{{1, 0, 0, 0}, {1, 0, 0, 0}}},
+		/*{{{0, 0, 0, 0}, {1, 0, 0, 0}}},
 		{{{0, 0, 0, 0}, {1, 1, 0, 0}}},
 		{{{0, 0, 0, 0}, {1, -1, 0, 0}}},
 		{{{0, 0, 0, 0}, {1, 0, 1, 0}}},
 		{{{0, 0, 0, 0}, {1, 0, -1, 0}}},
 		{{{0, 0, 0, 0}, {1, 1, 1, 0}}},
-		{{{0, 0, 0, 0}, {1, -1, -1, 0}}},
+		{{{0, 0, 0, 0}, {1, -1, -1, 0}}},*/
 	};
 };
 
@@ -182,7 +183,7 @@ TEST_F(RiemannSolversF, SymmetryUV)
 
 TEST_F(RiemannSolversF, Comparisons)
 {
-	for(auto i: moreInputs) {
+	for(auto i: inputs) {
 		std::cout << std::setprecision(6) << std::fixed << "\nInput:\t" << i
 				  << "\n";
 

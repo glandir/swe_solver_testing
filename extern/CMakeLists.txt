@@ -7,7 +7,6 @@ target_sources(swe_solvers
 		${CMAKE_CURRENT_SOURCE_DIR}/extern/WavePropagation.hpp
 		${CMAKE_CURRENT_SOURCE_DIR}/samoa/c_bind_riemannsolvers.f90
 		${CMAKE_CURRENT_SOURCE_DIR}/samoa/riemannsolvers.f90
-		${CMAKE_CURRENT_SOURCE_DIR}/samoa/riemannsolvers_sp.f90
 	)
 target_include_directories(swe_solvers
 	PUBLIC
