@@ -4,21 +4,17 @@
 #include <gtest/gtest.h>
 #include <iomanip>
 
-using RiemannSolverFunction = auto (*)(
-								  double* fL,
-								  double* fR,
-								  const double* qL,
-								  const double* qR,
-								  int direction,
-								  double grav,
-								  double epsilon) -> double;
+// Test Helpers
+namespace {
 
-struct NamedRSFunction
+struct RiemannSolver
 {
-	RiemannSolverFunction f;
+	using F = decltype(&swe::riemannSolver);
+
+	F f;
 	std::string_view name;
 };
-constexpr NamedRSFunction solvers[] = {
+constexpr RiemannSolver solvers[] = {
 	{swe::originalRiemannSolver, "origRS"},
 	{swe::riemannSolver, "myRS"},
 	{swe::samoaRiemannSolver, "samRS"},
@@ -27,15 +23,12 @@ constexpr NamedRSFunction solvers[] = {
 constexpr double grav = 9.81;
 constexpr double dryTolerance = 1e-3;
 
-constexpr int floatWidth = 11;
-
-struct Result
+struct TestResult
 {
 	/// Fluxes in cells.
 	glm::dvec4 cells[2];
 	double maxSpeed;
 };
-
 struct TestInput
 {
 	/// Initial conserved values in cells.
@@ -49,7 +42,7 @@ auto operator<<(std::ostream& os, glm::vec4 v) -> std::ostream&
 	return os << "(" << floatW << v.x << ",\t" << floatW << v.y << ",\t"
 			  << floatW << v.z << ",\t" << floatW << v.w << ")";
 }
-auto operator<<(std::ostream& os, Result r) -> std::ostream&
+auto operator<<(std::ostream& os, TestResult r) -> std::ostream&
 {
 	return os << "Result{\t" << r.cells[0] << ",\t" << r.cells[1] << ",\t"
 			  << r.maxSpeed << "}";
@@ -59,10 +52,10 @@ auto operator<<(std::ostream& os, TestInput i) -> std::ostream&
 	return os << "Input{\t" << i.cells[0] << ",\t" << i.cells[1] << "}";
 }
 
-auto callSolver(TestInput input, int direction, RiemannSolverFunction f)
-	-> Result
+auto callSolver(TestInput input, int direction, RiemannSolver::F f)
+	-> TestResult
 {
-	Result result;
+	TestResult result;
 	result.maxSpeed
 		= f(glm::value_ptr(result.cells[0]),
 			glm::value_ptr(result.cells[1]),
@@ -74,25 +67,12 @@ auto callSolver(TestInput input, int direction, RiemannSolverFunction f)
 	return result;
 }
 
-template<class T>
-auto mirrored(T t) -> T
-{
-	auto negUV = [](glm::dvec4 v) { return glm::dvec4{v.x, -v.y, -v.z, v.w}; };
-	return {{negUV(t.cells[1]), negUV(t.cells[0])}};
-}
-
-auto swappedUV(TestInput r) -> TestInput
-{
-	std::swap(r.cells[0].y, r.cells[0].z);
-	std::swap(r.cells[1].y, r.cells[1].z);
-	return r;
-}
+} // namespace
 
 struct RiemannSolversF: ::testing::Test
 {
-	std::vector<TestInput> dynInputs;
-	template<class F>
-	auto forEach(F&& f)
+	std::vector<TestInput> allCases;
+	RiemannSolversF()
 	{
 		constexpr double values[] = {-1, 0, 1};
 		// clang-format off
@@ -109,81 +89,24 @@ struct RiemannSolversF: ::testing::Test
 				{values[h1], values[hu1], values[hv1], values[b1]},
 				{values[h2], values[hu2], values[hv2], values[b2]},
 			}};
-			
-			f(i);
-
+			allCases.push_back(i);
 		}}}}
 		}}}}
 		// clang-format on
 	}
 
-	std::vector<TestInput> moreInputs;
-	static constexpr TestInput inputs[] = {
+	static constexpr TestInput simpleCases[] = {
 		{{{1, 0, 0, 0}, {1, 0, 0, 0}}},
-		/*{{{0, 0, 0, 0}, {1, 0, 0, 0}}},
-		{{{0, 0, 0, 0}, {1, 1, 0, 0}}},
-		{{{0, 0, 0, 0}, {1, -1, 0, 0}}},
-		{{{0, 0, 0, 0}, {1, 0, 1, 0}}},
-		{{{0, 0, 0, 0}, {1, 0, -1, 0}}},
-		{{{0, 0, 0, 0}, {1, 1, 1, 0}}},
-		{{{0, 0, 0, 0}, {1, -1, -1, 0}}},*/
+		{{{1, 0, 0, 0}, {0.5, 0, 0, 0}}},
+		{{{1, 1, 1, 0}, {1, 1, 1, 0}}},
+		{{{0, 1, 1, 1}, {0, 1, 1, 1}}},
+		{{{1, 1, 1, 1}, {1, 1, 1, 1}}},
 	};
 };
 
-TEST(RiemannSolvers, Linking)
+TEST_F(RiemannSolversF, Simple)
 {
-	Result r = callSolver({}, 0, swe::samoaRiemannSolver);
-}
-
-/// riemann(l, r) should produce equivalent results to
-/// riemann(r, l).
-TEST_F(RiemannSolversF, SymmetryAroundWall)
-{
-	for(auto i: inputs) {
-		auto mi = mirrored(i);
-		std::cout << std::setprecision(6) << std::fixed << "\nInput:\t" << i
-				  << "\n"
-					 "\t"
-				  << mi << '\n';
-
-		for(auto s: solvers) {
-			auto r1 = callSolver(i, 0, s.f);
-			auto r2 = callSolver(mi, 0, s.f);
-
-			std::cout << s.name << ":\t" << r1
-					  << "\n"
-						 "\t"
-					  << r2 << "\n";
-		}
-		std::cout << '\n';
-	}
-	FAIL();
-}
-
-TEST_F(RiemannSolversF, SymmetryUV)
-{
-	for(auto i: inputs) {
-		auto si = swappedUV(i);
-		std::cout << std::setprecision(6) << std::fixed << "\nInput:\t" << i
-				  << "\n"
-					 "\t"
-				  << si << '\n';
-		for(auto s: solvers) {
-			auto r1 = callSolver(i, 0, s.f);
-			auto r2 = callSolver(si, 1, s.f);
-
-			std::cout << s.name << ":\t" << r1
-					  << "\n"
-						 "\t"
-					  << r2 << "\n";
-		}
-		std::cout << '\n';
-	}
-}
-
-TEST_F(RiemannSolversF, Comparisons)
-{
-	for(auto i: inputs) {
+	for(auto i: simpleCases) {
 		std::cout << std::setprecision(6) << std::fixed << "\nInput:\t" << i
 				  << "\n";
 
@@ -199,17 +122,27 @@ TEST_F(RiemannSolversF, Comparisons)
 
 TEST_F(RiemannSolversF, Extensive)
 {
-	auto f = [](auto i) {
-		std::cout << std::setprecision(6) << std::fixed << "\nInput:\t" << i
+	for(auto input: allCases) {
+		std::cout << std::setprecision(6) << std::fixed << "\nInput:\t" << input
 				  << "\n";
+		TestResult results[3];
+		for(auto i = 0U; i < 3; ++i) {
+			results[i] = callSolver(input, 0, solvers[i].f);
 
-		for(auto s: solvers) {
-			auto r = callSolver(i, 0, s.f);
+			std::cout << solvers[i].name << ":\t" << results[i] << "\n";
 
-			std::cout << s.name << ":\t" << r << "\n";
+			ASSERT_DOUBLE_EQ(0.0, results[i].cells[0].w);
+			ASSERT_DOUBLE_EQ(0.0, results[i].cells[1].w);
 		}
-	};
-	forEach(f);
+
+		for(auto j: {0, 1}) {
+			// These happen most of the time, not always though.
+			// ASSERT_DOUBLE_EQ(results[1].cells[j].x, results[2].cells[j].x);
+			// ASSERT_DOUBLE_EQ(results[1].cells[j].y, results[2].cells[j].y);
+
+			ASSERT_DOUBLE_EQ(results[0].cells[j].z, results[1].cells[j].z);
+		}
+	}
 
 	FAIL();
 }
