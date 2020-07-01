@@ -3,8 +3,8 @@
 * Clone with
 
 	```
-	git clone https://github.com/glandir/swe_solver_debugging
-	cd swe_solver_debugging
+	git clone https://github.com/glandir/swe_solver_testing
+	cd swe_solver_testing
 	# No need for ExaHyPE submodules; we don't build it.
 	git submodule update --init extern
 	```
