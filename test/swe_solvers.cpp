@@ -4,9 +4,6 @@
 #include <gtest/gtest.h>
 #include <iomanip>
 
-// Test Helpers
-namespace {
-
 struct RiemannSolver
 {
 	using F = decltype(&swe::riemannSolver);
@@ -37,11 +34,13 @@ struct TestInput
 
 auto floatW = std::setw(11);
 
-auto operator<<(std::ostream& os, glm::vec4 v) -> std::ostream&
+namespace glm {
+auto operator<<(std::ostream& os, glm::dvec4 v) -> std::ostream&
 {
 	return os << "(" << floatW << v.x << ",\t" << floatW << v.y << ",\t"
 			  << floatW << v.z << ",\t" << floatW << v.w << ")";
 }
+} // namespace glm
 auto operator<<(std::ostream& os, TestResult r) -> std::ostream&
 {
 	return os << "Result{\t" << r.cells[0] << ",\t" << r.cells[1] << ",\t"
@@ -67,7 +66,10 @@ auto callSolver(TestInput input, int direction, RiemannSolver::F f)
 	return result;
 }
 
-} // namespace
+auto swe::operator<<(std::ostream& os, const swe::PrintVec4& p) -> std::ostream&
+{
+	return os << glm::dvec4{p.v[0], p.v[1], p.v[2], p.v[3]};
+}
 
 struct RiemannSolversF: ::testing::Test
 {
@@ -113,9 +115,8 @@ TEST_F(RiemannSolversF, Simple)
 		for(auto s: solvers) {
 			auto r = callSolver(i, 0, s.f);
 
-			std::cout << s.name << ":\t" << r << "\n";
+			std::cout << s.name << ":\t" << r << "\n\n";
 		}
-		std::cout << '\n';
 	}
 	FAIL();
 }
