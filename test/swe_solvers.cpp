@@ -130,17 +130,6 @@ TEST_F(RiemannSolversF, Extensive)
 			results[i] = callSolver(input, 0, solvers[i].f);
 
 			std::cout << solvers[i].name << ":\t" << results[i] << "\n";
-
-			ASSERT_DOUBLE_EQ(0.0, results[i].cells[0].w);
-			ASSERT_DOUBLE_EQ(0.0, results[i].cells[1].w);
-		}
-
-		for(auto j: {0, 1}) {
-			// These happen most of the time, not always though.
-			// ASSERT_DOUBLE_EQ(results[1].cells[j].x, results[2].cells[j].x);
-			// ASSERT_DOUBLE_EQ(results[1].cells[j].y, results[2].cells[j].y);
-
-			ASSERT_DOUBLE_EQ(results[0].cells[j].z, results[1].cells[j].z);
 		}
 	}
 
