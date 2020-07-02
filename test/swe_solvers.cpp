@@ -18,7 +18,7 @@ constexpr RiemannSolver solvers[] = {
 };
 
 constexpr double grav = 9.81;
-constexpr double dryTolerance = 1e-3;
+constexpr double dryTolerance = 1e-5;
 
 struct TestResult
 {
@@ -32,7 +32,7 @@ struct TestInput
 	glm::dvec4 cells[2];
 };
 
-auto floatW = std::setw(11);
+auto floatW = std::setw(14);
 
 namespace glm {
 auto operator<<(std::ostream& os, glm::dvec4 v) -> std::ostream&
@@ -98,19 +98,23 @@ struct RiemannSolversF: ::testing::Test
 	}
 
 	static constexpr TestInput simpleCases[] = {
+		{{{0.005, 0, 0, 0}, {0.001, 0, 0, 0}}},
+		{{{8899.326826472694, 122.0337839252433, 0, 0},
+		  {8899.326826472694, -122.0337839252433, 0, 0}}},
 		{{{1, 0, 0, 0}, {1, 0, 0, 0}}},
 		{{{1, 0, 0, 0}, {0.5, 0, 0, 0}}},
 		{{{1, 1, 1, 0}, {1, 1, 1, 0}}},
 		{{{0, 1, 1, 1}, {0, 1, 1, 1}}},
 		{{{1, 1, 1, 1}, {1, 1, 1, 1}}},
 	};
+	//  8899.739847378269
 };
 
 TEST_F(RiemannSolversF, Simple)
 {
 	for(auto i: simpleCases) {
-		std::cout << std::setprecision(6) << std::fixed << "\nInput:\t" << i
-				  << "\n";
+		std::cout << std::setprecision(6) << std::fixed
+				  << "------------------\nInput:\t" << i << "\n";
 
 		for(auto s: solvers) {
 			auto r = callSolver(i, 0, s.f);
